@@ -1,4 +1,4 @@
-module toolbox
+module github.com/ituoga/toolbox
 
 go 1.23.0
 
