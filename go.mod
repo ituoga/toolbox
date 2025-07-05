@@ -8,6 +8,7 @@ require (
 	github.com/delaneyj/toolbelt v0.5.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
+	github.com/lmittmann/tint v1.1.2
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/bytebufferpool v1.0.0
 	gorm.io/gorm v1.30.0
