@@ -24,29 +24,29 @@ package omap
 //	fmt.Println(m.Keys())     // Output: ["three"]
 //	fmt.Println(m.Values())   // Output: [3]
 
-type Map[T any] struct {
-	data map[string]T
-	keys []string
+type Map[K comparable, T any] struct {
+	data map[K]T
+	keys []K
 }
 
-func New[T any]() *Map[T] {
-	return &Map[T]{
-		data: make(map[string]T),
+func New[K comparable, T any]() *Map[K, T] {
+	return &Map[K, T]{
+		data: make(map[K]T),
 	}
 }
-func (m *Map[T]) Set(key string, value T) {
+func (m *Map[K, T]) Set(key K, value T) {
 	if _, exists := m.data[key]; !exists {
 		m.keys = append(m.keys, key)
 	}
 	m.data[key] = value
 }
 
-func (m *Map[T]) Get(key string) (T, bool) {
+func (m *Map[K, T]) Get(key K) (T, bool) {
 	value, exists := m.data[key]
 	return value, exists
 }
 
-func (m *Map[T]) Delete(key string) {
+func (m *Map[K, T]) Delete(key K) {
 	if _, exists := m.data[key]; exists {
 		delete(m.data, key)
 		for i, k := range m.keys {
@@ -58,11 +58,11 @@ func (m *Map[T]) Delete(key string) {
 	}
 }
 
-func (m *Map[T]) Keys() []string {
+func (m *Map[K, T]) Keys() []K {
 	return m.keys
 }
 
-func (m *Map[T]) Values() []T {
+func (m *Map[K, T]) Values() []T {
 	values := make([]T, 0, len(m.data))
 	for _, key := range m.keys {
 		values = append(values, m.data[key])
@@ -70,16 +70,16 @@ func (m *Map[T]) Values() []T {
 	return values
 }
 
-func (m *Map[T]) Len() int {
+func (m *Map[K, T]) Len() int {
 	return len(m.data)
 }
 
-func (m *Map[T]) Clear() {
-	m.data = make(map[string]T)
-	m.keys = []string{}
+func (m *Map[K, T]) Clear() {
+	m.data = make(map[K]T)
+	m.keys = []K{}
 }
 
-func (m *Map[T]) ForEach(fn func(key string, value T)) {
+func (m *Map[K, T]) ForEach(fn func(key K, value T)) {
 	for _, key := range m.keys {
 		value := m.data[key]
 		fn(key, value)
