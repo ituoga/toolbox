@@ -77,7 +77,7 @@ func (m *Message) JSON(v interface{}) error {
 // Respond sends a raw data reply.
 func (m *Message) Respond(data []byte) error {
 	if m.Reply != "" {
-		return m.Respond(data)
+		return m.Msg.Respond(data)
 	}
 	return nil
 }
@@ -91,7 +91,7 @@ func (m *Message) RespondJSON(v interface{}) error {
 	if err != nil {
 		return err
 	}
-	return m.Respond(data)
+	return m.Msg.Respond(data)
 }
 
 // RespondAny sends a response depending on the type.
