@@ -43,6 +43,13 @@ func (r *Router) Handle(subject string, handler HandlerFunc) {
 	r.handlers[full] = handler
 }
 
+// HandleMany registers a handler for multiple subjects.
+func (r *Router) HandleMany(subjects []string, handler HandlerFunc) {
+	for _, s := range subjects {
+		r.Handle(s, handler)
+	}
+}
+
 // Listen subscribes to all registered subjects and processes responses if needed.
 func (r *Router) Listen() error {
 	for subject, handler := range r.handlers {
