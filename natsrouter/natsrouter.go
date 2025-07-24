@@ -59,6 +59,11 @@ func (r *Router) Listen() error {
 	return nil
 }
 
+func NewMessage(subject string) *Message {
+	msg := nats.NewMsg(subject)
+	return WrapMessage(msg)
+}
+
 // Message wraps a *nats.Msg and provides helper methods.
 type Message struct {
 	*nats.Msg
@@ -92,6 +97,13 @@ func (m *Message) RespondJSON(v interface{}) error {
 		return err
 	}
 	return m.Msg.Respond(data)
+}
+
+func (m *Message) RespondSelf() error {
+	if m.Reply == "" {
+		return nil
+	}
+	return m.Msg.RespondMsg(m.Msg)
 }
 
 // RespondAny sends a response depending on the type.
