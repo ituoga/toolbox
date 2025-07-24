@@ -100,9 +100,6 @@ func (m *Message) RespondJSON(v interface{}) error {
 }
 
 func (m *Message) RespondSelf() error {
-	if m.Reply == "" {
-		return nil
-	}
 	return m.Msg.RespondMsg(m.Msg)
 }
 
