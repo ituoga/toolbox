@@ -102,9 +102,9 @@ func (m *Message) RespondAny(v any) error {
 
 	switch val := v.(type) {
 	case []byte:
-		return m.Respond(val)
+		return m.Msg.Respond(val)
 	case string:
-		return m.Respond([]byte(val))
+		return m.Msg.Respond([]byte(val))
 	default:
 		return m.RespondJSON(val)
 	}
