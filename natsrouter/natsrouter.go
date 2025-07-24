@@ -35,19 +35,21 @@ func (r *Router) Handle(subject string, handler HandlerFunc) {
 func (r *Router) Listen() error {
 	for subject, handler := range r.handlers {
 		_, err := r.nc.Subscribe(subject, func(m *nats.Msg) {
-			if m.Reply == "" {
-				return // skip if no reply expected
-			}
 
 			msg := WrapMessage(m)
 			resp, err := handler(msg)
 			if err != nil {
-				msg.MarkError(err)
-				_ = msg.RespondSelf()
+				if m.Reply == "" {
+					msg.MarkError(err)
+					_ = msg.RespondSelf()
+				}
 				return
 			}
 			if resp == nil {
 				return // no response to send
+			}
+			if m.Reply == "" {
+				return // skip if no reply expected
 			}
 			if err := msg.RespondAny(resp); err != nil {
 				log.Printf("[natsrouter] failed to respond: %v", err)
