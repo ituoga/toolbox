@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/nats-io/nats.go"
 )
@@ -15,6 +16,7 @@ type HandlerFunc func(msg *Message) (any, error)
 // Router routes request/reply messages based on subject names.
 type Router struct {
 	nc       *nats.Conn
+	prefix   string
 	handlers map[string]HandlerFunc
 }
 
@@ -26,9 +28,19 @@ func New(nc *nats.Conn) *Router {
 	}
 }
 
-// Handle registers a request/reply handler for a specific subject.
+// NewWithPrefix creates a new Router with a specific prefix for subjects.
+func (r *Router) Group(prefix string) *Router {
+	return &Router{
+		nc:       r.nc,
+		prefix:   joinSubject(r.prefix, prefix),
+		handlers: r.handlers, // bendras map (arba izoliuotas, jei reikia)
+	}
+}
+
+// Handle registers a handler for a specific subject.
 func (r *Router) Handle(subject string, handler HandlerFunc) {
-	r.handlers[subject] = handler
+	full := joinSubject(r.prefix, subject)
+	r.handlers[full] = handler
 }
 
 // Listen subscribes to all registered subjects and processes responses if needed.
@@ -147,4 +159,14 @@ func (m *Message) Error() error {
 // IsError checks if the message has an error flag set.
 func (m *Message) IsError() bool {
 	return m.Header.Get("X-NatsRouter-Error") != ""
+}
+
+func joinSubject(parts ...string) string {
+	var out []string
+	for _, p := range parts {
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return strings.Join(out, ".")
 }
