@@ -105,6 +105,8 @@ func (m *Message) RespondAny(v any) error {
 		return m.Msg.Respond(val)
 	case string:
 		return m.Msg.Respond([]byte(val))
+	case *nats.Msg:
+		return m.Msg.RespondMsg(val)
 	default:
 		return m.RespondJSON(val)
 	}
