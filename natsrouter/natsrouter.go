@@ -3,6 +3,7 @@ package natsrouter
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 
 	"github.com/nats-io/nats.go"
@@ -41,7 +42,8 @@ func (r *Router) Listen() error {
 			msg := WrapMessage(m)
 			resp, err := handler(msg)
 			if err != nil {
-				_ = msg.RespondJSON(map[string]string{"error": err.Error()})
+				msg.MarkError(err)
+				_ = msg.RespondSelf()
 				return
 			}
 			if resp == nil {
@@ -121,4 +123,26 @@ func (m *Message) RespondAny(v any) error {
 	default:
 		return m.RespondJSON(val)
 	}
+}
+
+func (m *Message) MarkError(err error) {
+	if m.Header == nil {
+		m.Header = nats.Header{}
+	}
+	m.Header.Set("X-NatsRouter-Error", err.Error())
+}
+
+func (m *Message) Error() error {
+	if m.Header == nil {
+		return nil
+	}
+	if errStr := m.Header.Get("X-NatsRouter-Error"); errStr != "" {
+		return errors.New(errStr)
+	}
+	return nil
+}
+
+// IsError checks if the message has an error flag set.
+func (m *Message) IsError() bool {
+	return m.Header.Get("X-NatsRouter-Error") != ""
 }
