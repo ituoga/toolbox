@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/nats-io/nats.go"
 )
@@ -17,15 +18,37 @@ type HandlerFunc func(msg *Message) (any, error)
 type Router struct {
 	nc       *nats.Conn
 	prefix   string
-	handlers map[string]HandlerFunc
+	handlers map[string][]HandlerFunc
 }
 
 // New creates a new Router with the given NATS connection.
 func New(nc *nats.Conn) *Router {
 	return &Router{
 		nc:       nc,
-		handlers: make(map[string]HandlerFunc),
+		handlers: make(map[string][]HandlerFunc),
 	}
+}
+
+// WithHealth starts a goroutine that periodically publishes node health info.
+func (r *Router) WithHealth(interval time.Duration, nodeInfo map[string]any) *Router {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			nodeInfo["timestamp"] = time.Now().Unix()
+			data, err := json.Marshal(nodeInfo)
+			if err != nil {
+				log.Printf("[natsrouter] failed to marshal health info: %v", err)
+				continue
+			}
+			err = r.nc.Publish("health.node", data)
+			if err != nil {
+				log.Printf("[natsrouter] failed to publish health info: %v", err)
+			}
+			<-ticker.C
+		}
+	}()
+	return r
 }
 
 // NewWithPrefix creates a new Router with a specific prefix for subjects.
@@ -40,7 +63,7 @@ func (r *Router) Group(prefix string) *Router {
 // Handle registers a handler for a specific subject.
 func (r *Router) Handle(subject string, handler HandlerFunc) {
 	full := joinSubject(r.prefix, subject)
-	r.handlers[full] = handler
+	r.handlers[full] = append(r.handlers[full], handler)
 }
 
 // HandleMany registers a handler for multiple subjects.
@@ -52,26 +75,27 @@ func (r *Router) HandleMany(subjects []string, handler HandlerFunc) {
 
 // Listen subscribes to all registered subjects and processes responses if needed.
 func (r *Router) Listen() error {
-	for subject, handler := range r.handlers {
+	for subject, handlers := range r.handlers {
 		_, err := r.nc.Subscribe(subject, func(m *nats.Msg) {
-
-			msg := WrapMessage(m)
-			resp, err := handler(msg)
-			if err != nil {
-				if m.Reply == "" {
-					msg.MarkError(err)
-					_ = msg.RespondSelf()
+			for _, handler := range handlers {
+				msg := WrapMessage(m)
+				resp, err := handler(msg)
+				if err != nil {
+					if m.Reply == "" {
+						msg.MarkError(err)
+						_ = msg.RespondSelf()
+					}
+					return
 				}
-				return
-			}
-			if resp == nil {
-				return // no response to send
-			}
-			if m.Reply == "" {
-				return // skip if no reply expected
-			}
-			if err := msg.RespondAny(resp); err != nil {
-				log.Printf("[natsrouter] failed to respond: %v", err)
+				if resp == nil {
+					return // no response to send
+				}
+				if m.Reply == "" {
+					return // skip if no reply expected
+				}
+				if err := msg.RespondAny(resp); err != nil {
+					log.Printf("[natsrouter] failed to respond: %v", err)
+				}
 			}
 		})
 		if err != nil {
