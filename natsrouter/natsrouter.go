@@ -83,7 +83,9 @@ func (r *Router) Listen() error {
 				if err != nil {
 					if m.Reply == "" {
 						msg.MarkError(err)
-						_ = msg.RespondSelf()
+						_ = msg.RespondJSON(map[string]string{
+							"error": err.Error(),
+						})
 					}
 					return
 				}
