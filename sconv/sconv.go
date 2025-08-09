@@ -16,8 +16,14 @@ func StringWithError(input string) *ConverterWithErrors {
 	return &ConverterWithErrors{input: input}
 }
 
-func (cwe *ConverterWithErrors) String() string {
-	return cwe.input
+func (cwe *ConverterWithErrors) String() (r string, e error) {
+	r = cwe.input
+	return
+}
+
+func (cwe *ConverterWithErrors) Bytes() (r []byte, e error) {
+	r = []byte(cwe.input)
+	return
 }
 
 // Int from string
@@ -126,6 +132,16 @@ func String(input string) *ConverterWithoutErrors {
 	return &ConverterWithoutErrors{
 		StringWithError(input),
 	}
+}
+
+func (cwe *ConverterWithoutErrors) String() (r string) {
+	r, _ = cwe.cwe.String()
+	return
+}
+
+func (cwe *ConverterWithoutErrors) Bytes() (r []byte) {
+	r, _ = cwe.cwe.Bytes()
+	return
 }
 
 // Int from string
