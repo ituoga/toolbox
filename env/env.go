@@ -23,9 +23,9 @@ func GetWithError(k string) (*sconv.ConverterWithoutErrors, error) {
 	return nil, ErrNotExist
 }
 
-func GetDefault(key string, fallback string) string {
+func GetDefault(key string, fallback string) *sconv.ConverterWithoutErrors {
 	if val, ok := os.LookupEnv(key); ok {
-		return val
+		return sconv.String(val)
 	}
-	return fallback
+	return sconv.String(fallback)
 }
