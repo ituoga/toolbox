@@ -16,6 +16,10 @@ func StringWithError(input string) *ConverterWithErrors {
 	return &ConverterWithErrors{input: input}
 }
 
+func (cwe *ConverterWithErrors) String() string {
+	return cwe.input
+}
+
 // Int from string
 func (cwe *ConverterWithErrors) Int() (r int, e error) {
 	return strconv.Atoi(cwe.input)
