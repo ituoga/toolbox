@@ -14,10 +14,10 @@ type ErrorGroup struct {
 }
 
 func NewMaxSharedCtx(ctx context.Context, max int) *ErrorGroup {
-	eg, _ := errgroup.WithContext(ctx)
+	eg, lctx := errgroup.WithContext(ctx)
 	sem := semaphore.NewWeighted(int64(max))
 	return &ErrorGroup{
-		ctx: ctx,
+		ctx: lctx,
 		eg:  eg,
 		sem: sem,
 	}
